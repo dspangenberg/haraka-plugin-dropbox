@@ -1,0 +1,10 @@
+engines:
+  eslint:
+    enabled: true
+    channel: 'eslint-9'
+    config:
+      config: 'eslint.config.mjs'
+
+ratings:
+  paths:
+    - '**.js'
