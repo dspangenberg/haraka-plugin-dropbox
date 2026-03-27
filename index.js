@@ -1,15 +1,15 @@
 'use strict'
 
 exports.register = function () {
-  this.load_template_ini()
+  this.load_dropbox_ini()
 
   // register hooks here. More info at https://haraka.github.io/core/Plugins/
   // this.register_hook('data_post', 'do_stuff_with_message')
 }
 
-exports.load_template_ini = function () {
+exports.load_dropbox_ini = function () {
   this.cfg = this.config.get(
-    'template.ini',
+    'dropbox.ini',
     {
       booleans: [
         '+enabled', // this.cfg.main.enabled=true
@@ -18,9 +18,9 @@ exports.load_template_ini = function () {
       ],
     },
     () => {
-      // This closure is run a few seconds after template.ini changes
+      // This closure is run a few seconds after dropbox.ini changes
       // Re-run the outer function again
-      this.load_template_ini()
+      this.load_dropbox_ini()
     },
   )
 }

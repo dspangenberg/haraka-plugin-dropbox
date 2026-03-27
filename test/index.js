@@ -8,7 +8,7 @@ const fixtures = require('haraka-test-fixtures')
 //    assert: https://nodejs.org/api/assert.html
 
 beforeEach(() => {
-  this.plugin = new fixtures.plugin('template')
+  this.plugin = new fixtures.plugin('dropbox')
   
   // replace vm-compiled fns with instrumented copies for coverage tracking
   if (process.env.HARAKA_COVERAGE) {
@@ -39,19 +39,19 @@ describe('register', () => {
   })
 })
 
-describe('load_template_ini', () => {
+describe('load_dropbox_ini', () => {
   it('loads', () => {
     assert.equal('object', typeof this.plugin)
-    assert.equal('template', this.plugin.name)
+    assert.equal('dropbox', this.plugin.name)
   })
 
-  it('loads template.ini from config/template.ini', () => {
-    this.plugin.load_template_ini()
+  it('loads dropbox.ini from config/dropbox.ini', () => {
+    this.plugin.load_dropbox_ini()
     assert.ok(this.plugin.cfg)
   })
 
   it('initializes enabled boolean', () => {
-    this.plugin.load_template_ini()
+    this.plugin.load_dropbox_ini()
     assert.equal(this.plugin.cfg.main.enabled, true, this.plugin.cfg)
   })
 })
