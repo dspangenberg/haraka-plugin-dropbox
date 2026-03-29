@@ -58,7 +58,7 @@ The plugin intercepts emails at the `data_post` hook and forwards them as JSON p
 
 <!-- leave these buried at the bottom of the document -->
 
-[ci-img]: https://github.com/twiceware-cloud/haraka-plugin-dropbox/actions/workflows/ci.yml/badge.svg
-[ci-url]: https://github.com/twiceware-cloud/haraka-plugin-dropbox/actions/workflows/ci.yml
-[clim-img]: https://codeclimate.com/github/twiceware-cloud/haraka-plugin-dropbox/badges/gpa.svg
-[clim-url]: https://codeclimate.com/github/twiceware-cloud/haraka-plugin-dropbox
+[ci-img]: https://github.com/dspangenberg/haraka-plugin-dropbox/actions/workflows/ci.yml/badge.svg
+[ci-url]: https://github.com/dspangenberg/haraka-plugin-dropbox/actions/workflows/ci.yml
+[clim-img]: https://codeclimate.com/github/dspangenberg/haraka-plugin-dropbox/badges/gpa.svg
+[clim-url]: https://codeclimate.com/github/dspangenberg/haraka-plugin-dropbox
