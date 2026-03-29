@@ -136,41 +136,28 @@ exports.post_to_dropbox = function (next, connection) {
 
 function parseGermanOutlookReply(text) {
   const lines = text.split(/\r?\n/)
-  let foundVon = false
+  let vonIndex = -1
   let betreffIndex = -1
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim()
 
-    if (!foundVon && /^Von:\s*</.test(line)) {
-      foundVon = true
+    if (vonIndex < 0 && /^Von:\s+/i.test(line)) {
+      vonIndex = i
     }
 
-    if (foundVon && /^Betreff:\s*/i.test(line)) {
+    if (vonIndex >= 0 && /^Betreff:\s*/i.test(line)) {
       betreffIndex = i
       break
     }
   }
 
-  if (betreffIndex >= 0) {
-    for (let i = betreffIndex + 1; i < lines.length; i++) {
-      if (lines[i].trim() === '') {
-        const replyText = lines
-          .slice(i + 1)
-          .join('\n')
-          .trim()
-        if (replyText) {
-          return replyText
-        }
-      }
-    }
+  if (vonIndex >= 0 && betreffIndex >= 0) {
     const replyText = lines
-      .slice(betreffIndex + 1)
+      .slice(0, vonIndex)
       .join('\n')
       .trim()
-    if (replyText) {
-      return replyText
-    }
+    if (replyText) return replyText
   }
 
   return null
