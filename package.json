@@ -36,7 +36,10 @@
   },
   "homepage": "https://github.com/dspangenberg/haraka-plugin-dropbox#readme",
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@haraka/eslint-config": "^2.0.2",
+    "globals": "^17.4.0",
     "haraka-test-fixtures": "^1.3.10",
     "smtp-client": "^0.4.0"
   },
@@ -46,12 +49,12 @@
   },
   "dependencies": {
     "axios": "^1.14.0",
-    "email-forward-parser": "^1.7.2",
-    "email-reply-parser": "^2.3.5",
+    "email-forward-parser": "github:dspangenberg/email-forward-parser",
+    "email-reply-parser": "github:dspangenberg/email-reply-parser",
     "haraka-dsn": "^1.1.0",
     "mailparser": "^3.9.6",
     "re": "^0.1.4",
-    "re2": "^1.23.3",
+    "re2": "1.23.3",
     "string.ify": "^1.0.64"
   }
 }

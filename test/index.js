@@ -2,7 +2,7 @@
 const path = require('node:path')
 const assert = require('node:assert/strict')
 const { Readable } = require('node:stream')
-const { afterEach, beforeEach, describe, it, mock } = require('node:test')
+const { beforeEach, describe, it, mock } = require('node:test')
 
 // npm modules
 const fixtures = require('haraka-test-fixtures')
@@ -24,9 +24,6 @@ beforeEach(() => {
   this.connection.init_transaction()
 })
 
-afterEach(() => {
-  mock.restoreAll()
-})
 
 const RAW_EMAIL = [
   'From: sender@example.com',
