@@ -15,8 +15,23 @@ jobs:
 
   ubuntu:
     needs: [lint]
-    uses: haraka/.github/.github/workflows/ubuntu.yml@master
+    runs-on: ubuntu-latest
+     steps:
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - run: npm install --legacy-peer-deps
+      - run: npm test
 
   windows:
     needs: [lint]
-    uses: haraka/.github/.github/workflows/windows.yml@master
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - run: npm install --legacy-peer-deps
+      - run: npm run test

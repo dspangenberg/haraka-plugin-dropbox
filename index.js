@@ -54,8 +54,6 @@ exports.post_to_dropbox = function (next, connection) {
     }
 
     plugin.loginfo('simpleParser completed')
-    plugin.loginfo('E-Mail: ' + stringify(mail))
-
     const messageId = mail.messageId || Date.now() + '@haraka'
 
     let rcpt_to
@@ -67,11 +65,7 @@ exports.post_to_dropbox = function (next, connection) {
       const rcpt = connection.transaction.rcpt_to[0]
       rcpt_to = `${rcpt.user}@${rcpt.host}`
     }
-
-    plugin.loginfo('rcpt_to', rcpt_to)
-
     const url = plugin.cfg.dropboxes[rcpt_to]
-    plugin.loginfo('Dropbox ', url)
     if (url) {
       let plain_body
       let subject = mail.subject
@@ -85,8 +79,6 @@ exports.post_to_dropbox = function (next, connection) {
         text_body,
         mail.subject,
       )
-
-      plugin.loginfo('forwardResult: ' + stringify(forwardResult))
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
@@ -108,11 +100,11 @@ exports.post_to_dropbox = function (next, connection) {
       }
 
       const _email = {
-        from: mail.from?.value?.map((item) => item.address) || [],
+        from: mail.from?.value?.map((item) => item.address)[0] || [],
         to: mail.to?.value?.map((item) => item.address) || [],
         rcpt_to: rcpt_to,
-        cc: mail.cc,
-        bcc: mail.bcc,
+        cc: mail.cc?.value?.map((item) => item.address) || [],
+        bcc: mail.cc?.value?.map((item) => item.address) || [],
         subject: subject,
         message_id: messageId,
         attachments: mail.attachments || [],
@@ -124,9 +116,7 @@ exports.post_to_dropbox = function (next, connection) {
         references: mail.references || [],
       }
 
-      if (!!mail.inReplyTo && mail.inReplyTo.length > 0)
-        _email.in_reply_to = mail.inReplyTo
-      else _email.in_reply_to = false
+      _email.in_reply_to = (!!mail.inReplyTo && mail.inReplyTo.length > 0) ? mail.inReplyTo : false
 
       plugin.loginfo('Processed E-Mail: ' + stringify(_email))
 
