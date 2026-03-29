@@ -100,7 +100,9 @@ describe('uses text fixtures', () => {
 
 describe('check_rcpt', () => {
   it('calls next(OK) when rcpt is found in dropboxes', () => {
-    this.plugin.cfg = { dropboxes: { 'user@example.com': 'https://dropbox.example.com' } }
+    this.plugin.cfg = {
+      dropboxes: { 'user@example.com': 'https://dropbox.example.com' },
+    }
     let called_with
     this.plugin.check_rcpt(
       (code) => {
@@ -134,12 +136,9 @@ describe('parse_body', () => {
 
   it('calls next', () => {
     let called = false
-    this.plugin.parse_body(
-      () => {
-        called = true
-      },
-      this.connection,
-    )
+    this.plugin.parse_body(() => {
+      called = true
+    }, this.connection)
     assert.ok(called)
   })
 })
@@ -161,20 +160,29 @@ describe('post_to_dropbox', () => {
   it('calls next(OK) and posts to dropbox when rcpt matches', (t, done) => {
     const axiosMock = mock.method(axios, 'post', () => Promise.resolve({}))
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
-    this.connection.transaction.rcpt_to = [{ user: 'test', host: 'example.com' }]
-    this.plugin.cfg = { dropboxes: { 'test@example.com': 'https://dropbox.example.com' } }
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
 
     this.plugin.post_to_dropbox((code) => {
       assert.equal(code, OK)
       assert.equal(axiosMock.mock.calls.length, 1)
-      assert.equal(axiosMock.mock.calls[0].arguments[0], 'https://dropbox.example.com')
+      assert.equal(
+        axiosMock.mock.calls[0].arguments[0],
+        'https://dropbox.example.com',
+      )
       done()
     }, this.connection)
   })
 
   it('calls next(DENY) when rcpt has no matching dropbox', (t, done) => {
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
-    this.connection.transaction.rcpt_to = [{ user: 'unknown', host: 'example.com' }]
+    this.connection.transaction.rcpt_to = [
+      { user: 'unknown', host: 'example.com' },
+    ]
     this.plugin.cfg = { dropboxes: {} }
 
     this.plugin.post_to_dropbox((code) => {
@@ -200,9 +208,14 @@ describe('post_to_dropbox', () => {
       return Promise.resolve({})
     })
 
-    this.connection.transaction.message_stream = createEmailStream(rawEmailWithReply)
-    this.connection.transaction.rcpt_to = [{ user: 'test', host: 'example.com' }]
-    this.plugin.cfg = { dropboxes: { 'test@example.com': 'https://dropbox.example.com' } }
+    this.connection.transaction.message_stream =
+      createEmailStream(rawEmailWithReply)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
     this.plugin.post_to_dropbox(() => {}, this.connection)
   })
 
@@ -214,8 +227,12 @@ describe('post_to_dropbox', () => {
     })
 
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
-    this.connection.transaction.rcpt_to = [{ user: 'test', host: 'example.com' }]
-    this.plugin.cfg = { dropboxes: { 'test@example.com': 'https://dropbox.example.com' } }
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
     this.plugin.post_to_dropbox(() => {}, this.connection)
   })
 })
