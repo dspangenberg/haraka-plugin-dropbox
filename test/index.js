@@ -28,7 +28,6 @@ afterEach(() => {
   mock.restoreAll()
 })
 
-
 const RAW_EMAIL = [
   'From: sender@example.com',
   'To: test@example.com',
