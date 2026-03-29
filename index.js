@@ -82,7 +82,7 @@ exports.post_to_dropbox = function (next, connection) {
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
-        from = forwardResult.email.from
+        from = forwardResult.email.from.address
         const germanReplyResult = parseGermanOutlookReply(
           forwardResult.email.body,
         )

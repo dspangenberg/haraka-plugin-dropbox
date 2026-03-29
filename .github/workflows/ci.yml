@@ -21,8 +21,6 @@ jobs:
   ubuntu:
     needs: [lint]
     runs-on: ubuntu-latest
-    env:
-      HARAKA_COVERAGE: 1
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -30,13 +28,11 @@ jobs:
           node-version: '22'
       - run: npm cache clean --force
       - run: npm install --legacy-peer-deps
-      - run: npm test
+      - run: npm npm run test:coverage
 
   windows:
     needs: [lint]
     runs-on: windows-latest
-    env:
-      HARAKA_COVERAGE: 1
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -44,4 +40,4 @@ jobs:
           node-version: '22'
       - run: npm cache clean --force
       - run: npm install --legacy-peer-deps
-      - run: npm test
+      - run: npm run test:coverage
