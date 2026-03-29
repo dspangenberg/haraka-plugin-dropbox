@@ -104,7 +104,7 @@ exports.post_to_dropbox = function (next, connection) {
         to: mail.to?.value?.map((item) => item.address) || [],
         rcpt_to: rcpt_to,
         cc: mail.cc?.value?.map((item) => item.address) || [],
-        bcc: mail.cc?.value?.map((item) => item.address) || [],
+        bcc: mail.bcc?.value?.map((item) => item.address) || [],
         subject: subject,
         message_id: messageId,
         attachments: mail.attachments || [],

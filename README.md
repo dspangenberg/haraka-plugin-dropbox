@@ -38,7 +38,7 @@ The plugin intercepts emails at the `data_post` hook and forwards them as JSON p
 ```json
 {
   "payload": {
-    "from": ["sender@example.com"],
+    "from": "sender@example.com",
     "to": ["recipient@example.com"],
     "rcpt_to": "recipient@example.com",
     "cc": [],
@@ -48,6 +48,7 @@ The plugin intercepts emails at the `data_post` hook and forwards them as JSON p
     "attachments": [],
     "html": "<html>...",
     "text": "Plain text body",
+    "plain_html": "Text body without quotes",
     "textAsHtml": "...",
     "timestamp": "2024-01-01T00:00:00.000Z",
     "references": [],
