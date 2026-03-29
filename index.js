@@ -3,7 +3,8 @@ const axios = require('axios')
 const simpleParser = require('mailparser').simpleParser
 const stringify = require('string.ify')
 const DSN = require('haraka-dsn')
-const EmailReplyParser = require('email-reply-parser').default;
+const EmailReplyParser = require('email-reply-parser').default
+const EmailForwardParser = require("email-forward-parser");
 
 exports.register = function () {
   this.load_dropbox_ini()
@@ -72,22 +73,40 @@ exports.post_to_dropbox = function (next, connection) {
     const url = plugin.cfg.dropboxes[rcpt_to]
     plugin.loginfo('Dropbox ', url)
     if (url) {
+      let plain_body
+      let subject = mail.subject
 
-      const text_body = mail.text ? mail.text : mail.html.replace(/<[^>]*>/g, '');
-      const replayParser = new EmailReplyParser();
+      const text_body = mail.text
+        ? mail.text
+        : mail.html.replace(/<[^>]*>/g, '')
+      const replayParser = new EmailReplyParser()
 
+      const forwardResult = new EmailForwardParser().read(text_body, mail.subject);
 
+      plugin.loginfo('forwardResult: ' + stringify(forwardResult))
+
+      if (forwardResult.forwarded) {
+        subject = forwardResult.email.subject || mail.subject
+        plain_body = forwardResult.email.body
+      } else {
+        const germanReplyResult = parseGermanOutlookReply(text_body)
+        if (germanReplyResult) {
+          plain_body = germanReplyResult
+        } else {
+          plain_body = replayParser.parseReply(text_body)
+        }
+      }
 
       const _email = {
-        from: mail.from.value.map((item) => item.address),
-        to: mail.to.value.map((item) => item.address),
+        from: mail.from?.value?.map((item) => item.address) || [],
+        to: mail.to?.value?.map((item) => item.address) || [],
         rcpt_to: rcpt_to,
         cc: mail.cc,
         bcc: mail.bcc,
-        subject: mail.subject,
+        subject: subject,
         message_id: messageId,
         attachments: mail.attachments || [],
-        plain_body: replayParser.parseReply(text_body),
+        plain_body: plain_body,
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
         text_as_html: mail.textAsHtml,
@@ -96,7 +115,7 @@ exports.post_to_dropbox = function (next, connection) {
       }
 
       if (!!mail.inReplyTo && mail.inReplyTo.length > 0)
-        _email.in_reply_to = mail.inReplyTo[0]
+        _email.in_reply_to = mail.inReplyTo
       else _email.in_reply_to = false
 
       plugin.loginfo('Processed E-Mail: ' + stringify(_email))
@@ -112,6 +131,49 @@ exports.post_to_dropbox = function (next, connection) {
       next(DENY, DSN.no_such_user())
     }
   })
+}
+
+
+function parseGermanOutlookReply(text) {
+  const lines = text.split(/\r?\n/)
+  let foundVon = false
+  let betreffIndex = -1
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+
+    if (!foundVon && /^Von:\s*</.test(line)) {
+      foundVon = true
+    }
+
+    if (foundVon && /^Betreff:\s*/i.test(line)) {
+      betreffIndex = i
+      break
+    }
+  }
+
+  if (betreffIndex >= 0) {
+    for (let i = betreffIndex + 1; i < lines.length; i++) {
+      if (lines[i].trim() === '') {
+        const replyText = lines
+          .slice(i + 1)
+          .join('\n')
+          .trim()
+        if (replyText) {
+          return replyText
+        }
+      }
+    }
+    const replyText = lines
+      .slice(betreffIndex + 1)
+      .join('\n')
+      .trim()
+    if (replyText) {
+      return replyText
+    }
+  }
+
+  return null
 }
 
 exports.load_dropbox_ini = function () {
