@@ -28,7 +28,7 @@ jobs:
           node-version: '22'
       - run: npm cache clean --force
       - run: npm install --legacy-peer-deps
-      - run: npm npm run test:coverage
+      - run: npm test
 
   windows:
     needs: [lint]
@@ -40,4 +40,4 @@ jobs:
           node-version: '22'
       - run: npm cache clean --force
       - run: npm install --legacy-peer-deps
-      - run: npm run test:coverage
+      - run: npm test
