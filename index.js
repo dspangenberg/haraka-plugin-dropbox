@@ -4,7 +4,7 @@ const simpleParser = require('mailparser').simpleParser
 const stringify = require('string.ify')
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
-const EmailForwardParser = require("email-forward-parser");
+const EmailForwardParser = require('email-forward-parser')
 
 exports.register = function () {
   this.load_dropbox_ini()
@@ -81,13 +81,23 @@ exports.post_to_dropbox = function (next, connection) {
         : mail.html.replace(/<[^>]*>/g, '')
       const replayParser = new EmailReplyParser()
 
-      const forwardResult = new EmailForwardParser().read(text_body, mail.subject);
+      const forwardResult = new EmailForwardParser().read(
+        text_body,
+        mail.subject,
+      )
 
       plugin.loginfo('forwardResult: ' + stringify(forwardResult))
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
-        plain_body = forwardResult.email.body
+        const germanReplyResult = parseGermanOutlookReply(
+          forwardResult.email.body,
+        )
+        if (germanReplyResult) {
+          plain_body = germanReplyResult
+        } else {
+          plain_body = replayParser.parseReply(forwardResult.email.body)
+        }
       } else {
         const germanReplyResult = parseGermanOutlookReply(text_body)
         if (germanReplyResult) {
@@ -133,7 +143,6 @@ exports.post_to_dropbox = function (next, connection) {
   })
 }
 
-
 function parseGermanOutlookReply(text) {
   const lines = text.split(/\r?\n/)
   let vonIndex = -1
@@ -153,10 +162,7 @@ function parseGermanOutlookReply(text) {
   }
 
   if (vonIndex >= 0 && betreffIndex >= 0) {
-    const replyText = lines
-      .slice(0, vonIndex)
-      .join('\n')
-      .trim()
+    const replyText = lines.slice(0, vonIndex).join('\n').trim()
     if (replyText) return replyText
   }
 

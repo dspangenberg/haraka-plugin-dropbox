@@ -2,8 +2,6 @@
 
 const net = require('net')
 const fs = require('fs')
-const crypto = require('crypto')
-
 const HOST = 'localhost'
 const PORT = 2526
 const USERNAME = 'test'
