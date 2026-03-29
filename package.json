@@ -53,8 +53,6 @@
     "email-reply-parser": "github:dspangenberg/email-reply-parser#da7cd3ebc7c9ec4f29d19b2ed0d4aa18efb5b5a4",
     "haraka-dsn": "^1.1.0",
     "mailparser": "^3.9.6",
-    "re": "^0.1.4",
-    "re2": "1.23.3",
-    "string.ify": "^1.0.64"
+    "re2": "1.23.3"
   }
 }

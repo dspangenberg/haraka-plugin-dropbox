@@ -1,7 +1,6 @@
 'use strict'
 const axios = require('axios')
 const simpleParser = require('mailparser').simpleParser
-const stringify = require('string.ify')
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
 const EmailForwardParser = require('email-forward-parser')
@@ -119,8 +118,6 @@ exports.post_to_dropbox = function (next, connection) {
 
       _email.in_reply_to =
         !!mail.inReplyTo && mail.inReplyTo.length > 0 ? mail.inReplyTo : false
-
-      plugin.loginfo('Processed E-Mail: ' + stringify(_email))
 
       axios
         .post(url, { payload: _email }, { timeout: 10000 })
