@@ -116,7 +116,8 @@ exports.post_to_dropbox = function (next, connection) {
         references: mail.references || [],
       }
 
-      _email.in_reply_to = (!!mail.inReplyTo && mail.inReplyTo.length > 0) ? mail.inReplyTo : false
+      _email.in_reply_to =
+        !!mail.inReplyTo && mail.inReplyTo.length > 0 ? mail.inReplyTo : false
 
       plugin.loginfo('Processed E-Mail: ' + stringify(_email))
 
