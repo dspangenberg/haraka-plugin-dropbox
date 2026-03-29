@@ -9,21 +9,16 @@ jobs:
   lint:
     uses: haraka/.github/.github/workflows/lint.yml@master
 
-  # coverage:
-  #   uses: haraka/.github/.github/workflows/coverage.yml@master
-  #   secrets: inherit
-
   ubuntu:
     needs: [lint]
     runs-on: ubuntu-latest
-     steps:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - run: npm install --legacy-peer-deps
-      - run: npm test
+      - run: npm run test:coverage
 
   windows:
     needs: [lint]
@@ -34,4 +29,4 @@ jobs:
         with:
           node-version: '20'
       - run: npm install --legacy-peer-deps
-      - run: npm run test
+      - run: npm run test:coverage
