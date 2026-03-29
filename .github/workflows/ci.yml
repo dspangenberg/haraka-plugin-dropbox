@@ -16,11 +16,7 @@ jobs:
   ubuntu:
     needs: [lint]
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
+     steps:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
