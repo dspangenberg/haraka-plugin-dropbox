@@ -69,7 +69,7 @@ exports.post_to_dropbox = function (next, connection) {
     if (url) {
       let plain_body
       let subject = mail.subject
-
+      let from = mail.from?.value?.map((item) => item.address)[0] || ''
       const text_body = mail.text
         ? mail.text
         : mail.html.replace(/<[^>]*>/g, '')
@@ -82,6 +82,7 @@ exports.post_to_dropbox = function (next, connection) {
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
+        from = forwardResult.email.from
         const germanReplyResult = parseGermanOutlookReply(
           forwardResult.email.body,
         )
@@ -100,7 +101,7 @@ exports.post_to_dropbox = function (next, connection) {
       }
 
       const _email = {
-        from: mail.from?.value?.map((item) => item.address)[0] || [],
+        from: from || '',
         to: mail.to?.value?.map((item) => item.address) || [],
         rcpt_to: rcpt_to,
         cc: mail.cc?.value?.map((item) => item.address) || [],
