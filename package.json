@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "axios": "^1.13.6",
+    "email-reply-parser": "^2.3.5",
     "haraka-dsn": "^1.1.0",
     "mailparser": "^3.9.6",
     "string.ify": "^1.0.64"

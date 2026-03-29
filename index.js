@@ -3,6 +3,7 @@ const axios = require('axios')
 const simpleParser = require('mailparser').simpleParser
 const stringify = require('string.ify')
 const DSN = require('haraka-dsn')
+const EmailReplyParser = require('email-reply-parser').default;
 
 exports.register = function () {
   this.load_dropbox_ini()
@@ -73,12 +74,9 @@ exports.post_to_dropbox = function (next, connection) {
     if (url) {
 
       const text_body = mail.text ? mail.text : mail.html.replace(/<[^>]*>/g, '');
-      const plain_body = text_body
-        .split('\n')
-        .filter(line => !line.match(/^>\s*/))
-        .join('\n')
-        .split(/^-{3,}\s*$|^_{3,}\s*$|^={3,}\s*$|^--+\s*$/m)[0]
-        .trim()
+      const replayParser = new EmailReplyParser();
+
+
 
       const _email = {
         from: mail.from.value.map((item) => item.address),
@@ -89,7 +87,7 @@ exports.post_to_dropbox = function (next, connection) {
         subject: mail.subject,
         message_id: messageId,
         attachments: mail.attachments || [],
-        plain_body: plain_body,
+        plain_body: replayParser.parseReply(text_body),
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
         text_as_html: mail.textAsHtml,
