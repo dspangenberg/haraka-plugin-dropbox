@@ -2,7 +2,7 @@
 const path = require('node:path')
 const assert = require('node:assert/strict')
 const { Readable } = require('node:stream')
-const { beforeEach, describe, it, mock } = require('node:test')
+const { afterEach, beforeEach, describe, it, mock } = require('node:test')
 
 // npm modules
 const fixtures = require('haraka-test-fixtures')
@@ -22,6 +22,10 @@ beforeEach(() => {
 
   this.connection = fixtures.connection.createConnection({})
   this.connection.init_transaction()
+})
+
+afterEach(() => {
+  mock.restoreAll()
 })
 
 

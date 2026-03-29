@@ -9,7 +9,7 @@ Haraka plugin that forwards incoming emails to configured Dropbox webhook URLs. 
 
 ```sh
 cd /path/to/local/haraka
-npm install haraka-plugin-dropbox
+npm install git@github.com:dspangenberg/haraka-plugin-dropbox.git --legacy-peer-deps
 echo "dropbox" >> config/plugins
 service haraka restart
 ```
