@@ -71,6 +71,15 @@ exports.post_to_dropbox = function (next, connection) {
     const url = plugin.cfg.dropboxes[rcpt_to]
     plugin.loginfo('Dropbox ', url)
     if (url) {
+
+      const text_body = mail.text ? mail.text : mail.html.replace(/<[^>]*>/g, '');
+      const plain_body = text_body
+        .split('\n')
+        .filter(line => !line.match(/^>\s*/))
+        .join('\n')
+        .split(/^-{3,}\s*$|^_{3,}\s*$|^={3,}\s*$|^--+\s*$/m)[0]
+        .trim()
+
       const _email = {
         from: mail.from.value.map((item) => item.address),
         to: mail.to.value.map((item) => item.address),
@@ -80,9 +89,10 @@ exports.post_to_dropbox = function (next, connection) {
         subject: mail.subject,
         message_id: messageId,
         attachments: mail.attachments || [],
-        html: mail.html,
-        text: mail.text,
-        textAsHtml: mail.textAsHtml,
+        plain_body: plain_body,
+        html: mail.html ? mail.html : mail.textAsHtml,
+        text: text_body,
+        text_as_html: mail.textAsHtml,
         timestamp: new Date(),
         references: mail.references || [],
       }
