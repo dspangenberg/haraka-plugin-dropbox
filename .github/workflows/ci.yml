@@ -39,4 +39,3 @@ jobs:
           node-version: '20'
       - run: npm install --legacy-peer-deps
       - run: npm run test
-        continue-on-error: true
