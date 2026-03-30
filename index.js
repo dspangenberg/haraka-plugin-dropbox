@@ -86,9 +86,6 @@ exports.post_to_dropbox = function (next, connection) {
         text_body,
         mail.subject,
       )
-
-      plugin.loginfo(safeStringify({ ...mail, date: date.toISOString() }))
-
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
         from = forwardResult.email.from.address
@@ -167,6 +164,7 @@ const parseFlexibleDate = function (dateStr) {
   if (germanMatch) {
     const germanMonths = {
       januar: 0,
+      februar: 1,
       märz: 2,
       april: 3,
       mai: 4,
