@@ -137,7 +137,7 @@ exports.post_to_dropbox = function (next, connection) {
       axios
         .post(url, { payload: _email }, { timeout: 10000 })
         .then(() => {
-          connection.transaction.notes.discard = [ 1 | true ];
+          connection.transaction.notes.discard = [1 | true]
           next()
         })
         .catch((err) => {
