@@ -50,7 +50,7 @@ The plugin intercepts emails at the `data_post` hook and forwards them as JSON p
     "text": "Plain text body",
     "plain_body: "Text body without quotes",
     "textAsHtml": "...",
-    "timestamp": "2024-01-01T00:00:00.000Z",
+    "date": "2024-01-01T00:00:00.000Z",
     "references": [],
     "in_reply_to": false
   }

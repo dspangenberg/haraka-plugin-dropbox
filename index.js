@@ -3,6 +3,7 @@ const axios = require('axios')
 const simpleParser = require('mailparser').simpleParser
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
+const safeStringify = require('safe-stringify').default
 const EmailForwardParser = require('email-forward-parser')
 
 exports.register = function () {
@@ -74,14 +75,20 @@ exports.post_to_dropbox = function (next, connection) {
         : mail.html.replace(/<[^>]*>/g, '')
       const replayParser = new EmailReplyParser()
 
+      let date = mail.date || Date.now()
+
       const forwardResult = new EmailForwardParser().read(
         text_body,
         mail.subject,
       )
 
+      plugin.loginfo(safeStringify(mail))
+
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
         from = forwardResult.email.from.address
+        date = new Date(forwardResult.email.date).toISOString()
+        plugin.loginfo(date)
         const germanReplyResult = parseGermanOutlookReply(
           forwardResult.email.body,
         )
@@ -112,7 +119,7 @@ exports.post_to_dropbox = function (next, connection) {
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
         text_as_html: mail.textAsHtml,
-        timestamp: new Date(),
+        date,
         references: mail.references || [],
       }
 

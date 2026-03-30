@@ -18,7 +18,7 @@ const commands = [
   () => socket.write(Buffer.from(USERNAME).toString('base64') + '\r\n'),
   () => socket.write(Buffer.from(PASSWORD).toString('base64') + '\r\n'),
   () => socket.write(`MAIL FROM:<test2@example.com>\r\n`),
-  () => socket.write(`RCPT TO:<test@example.com>\r\n`),
+  () => socket.write(`RCPT TO:<test@dropbox.opsc.cloud>\r\n`),
   () => socket.write('DATA\r\n'),
 ]
 
