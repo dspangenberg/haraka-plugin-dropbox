@@ -75,22 +75,27 @@ exports.post_to_dropbox = function (next, connection) {
         : mail.html.replace(/<[^>]*>/g, '')
       const replayParser = new EmailReplyParser()
 
-      let date = mail.date || Date.now()
+      let date =
+        mail.date instanceof Date && !isNaN(mail.date)
+          ? mail.date
+          : parseFlexibleDate(mail.date) || new Date()
 
       const forwardResult = new EmailForwardParser().read(
         text_body,
         mail.subject,
       )
 
-      plugin.loginfo(safeStringify(mail))
+      plugin.loginfo(safeStringify({ ...mail, date: date.toISOString() }))
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
         from = forwardResult.email.from.address
         plugin.loginfo(forwardResult.email.date)
         if (forwardResult.email.date) {
-          const parsedDate = new Date(forwardResult.email.date)
-          date = !isNaN(parsedDate) ? parsedDate.toISOString() : date
+          const parsedDate = parseFlexibleDate(forwardResult.email.date)
+          if (parsedDate) {
+            date = parsedDate
+          }
         }
         const germanReplyResult = parseGermanOutlookReply(
           forwardResult.email.body,
@@ -140,6 +145,80 @@ exports.post_to_dropbox = function (next, connection) {
       next(DENY, DSN.no_such_user())
     }
   })
+}
+
+function parseFlexibleDate(dateStr) {
+  if (!dateStr) return null
+
+  const parsed = new Date(dateStr)
+  if (parsed instanceof Date && !isNaN(parsed)) {
+    return parsed
+  }
+
+  const germanMatch = dateStr.match(
+    /(\d{1,2})\.\s*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s*(\d{4})\s*(?:um\s*)?(\d{1,2}:\d{2}(?::\d{2})?)?/i,
+  )
+  if (germanMatch) {
+    const germanMonths = {
+      januar: 0,
+      märz: 2,
+      april: 3,
+      mai: 4,
+      juni: 5,
+      juli: 6,
+      august: 7,
+      september: 8,
+      oktober: 9,
+      november: 10,
+      dezember: 11,
+    }
+    const [, day, month, year, time] = germanMatch
+    const hours = time ? time.split(':')[0] : 0
+    const minutes = time ? time.split(':')[1] || 0 : 0
+    const seconds = time && time.includes(':') ? time.split(':')[2] || 0 : 0
+    return new Date(
+      year,
+      germanMonths[month.toLowerCase()],
+      day,
+      hours,
+      minutes,
+      seconds,
+    )
+  }
+
+  const englishMatch = dateStr.match(
+    /(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\s*,?\s*(\d{1,2}:\d{2}(?::\d{2})?)?/i,
+  )
+  if (englishMatch) {
+    const months = {
+      january: 0,
+      february: 1,
+      march: 2,
+      april: 3,
+      may: 4,
+      june: 5,
+      july: 6,
+      august: 7,
+      september: 8,
+      october: 9,
+      november: 10,
+      december: 11,
+    }
+    const [, day, month, year, time] = englishMatch
+    const hours = time ? time.split(':')[0] : 0
+    const minutes = time ? time.split(':')[1] || 0 : 0
+    const seconds = time && time.includes(':') ? time.split(':')[2] || 0 : 0
+    return new Date(
+      year,
+      months[month.toLowerCase()],
+      day,
+      hours,
+      minutes,
+      seconds,
+    )
+  }
+
+  return null
 }
 
 function parseGermanOutlookReply(text) {
