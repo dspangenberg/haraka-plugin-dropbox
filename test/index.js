@@ -157,7 +157,7 @@ describe('post_to_dropbox', () => {
     process.nextTick(() => errStream.emit('error', new Error('parse error')))
   })
 
-  it('calls next(OK) and posts to dropbox when rcpt matches', (t, done) => {
+  it('marks the message for discard and posts to dropbox when rcpt matches', (t, done) => {
     const axiosMock = mock.method(axios, 'post', () => Promise.resolve({}))
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
@@ -173,6 +173,7 @@ describe('post_to_dropbox', () => {
         axiosMock.mock.calls[0].arguments[0],
         'https://dropbox.example.com',
       )
+      assert.ok(this.connection.transaction.notes.discard)
       done()
     }, this.connection)
   })
