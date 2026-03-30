@@ -31,6 +31,29 @@ invoice@example.com=https://your-dropbox-webhook.example.com/ingest
 support@example.com=https://your-dropbox-webhook.example.com/tickets
 ```
 
+### Queue Integration
+
+This plugin sets `connection.transaction.notes.discard = true` after successfully forwarding an email to a Dropbox webhook. This prevents Haraka from delivering the email to its original recipients.
+
+To use this feature, you must:
+
+1. Enable the `queue/discard` plugin in `config/plugins`
+2. Configure it to run on the `queue` hook
+
+**Important:** The `dropbox` plugin must be loaded before other queue plugins in `config/plugins`. The discard flag is checked during the queue phase, so the `queue/discard` plugin (and any real queue plugins like `queue/smtp`) must be listed after `dropbox` to ensure the flag is respected.
+
+Example `config/plugins`:
+
+```ini
+# Load dropbox first - it sets the discard flag after successful webhook delivery
+dropbox
+
+# Then load queue plugins - queue/discard checks the discard flag
+# and prevents delivery; queue/smtp delivers if discard is not set
+queue/discard
+queue/smtp
+```
+
 ## USAGE
 
 The plugin intercepts emails at the `data_post` hook and forwards them as JSON payloads to the configured Dropbox webhook URLs. Each email is sent with the following structure:

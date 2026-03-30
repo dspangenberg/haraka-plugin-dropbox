@@ -75,6 +75,8 @@ exports.post_to_dropbox = function (next, connection) {
         : mail.html.replace(/<[^>]*>/g, '')
       const replayParser = new EmailReplyParser()
 
+      let to = mail.to?.value?.map((item) => item.address) || []
+
       let date =
         mail.date instanceof Date && !isNaN(mail.date)
           ? mail.date
@@ -84,12 +86,10 @@ exports.post_to_dropbox = function (next, connection) {
         text_body,
         mail.subject,
       )
-
-      plugin.loginfo(safeStringify({ ...mail, date: date.toISOString() }))
-
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
         from = forwardResult.email.from.address
+        to = forwardResult.email.to.map((item) => item.address)
         plugin.loginfo(forwardResult.email.date)
         if (forwardResult.email.date) {
           const parsedDate = parseFlexibleDate(forwardResult.email.date)
@@ -116,7 +116,7 @@ exports.post_to_dropbox = function (next, connection) {
 
       const _email = {
         from: from || '',
-        to: mail.to?.value?.map((item) => item.address) || [],
+        to,
         rcpt_to: rcpt_to,
         cc: mail.cc?.value?.map((item) => item.address) || [],
         bcc: mail.bcc?.value?.map((item) => item.address) || [],
@@ -150,7 +150,7 @@ exports.post_to_dropbox = function (next, connection) {
   })
 }
 
-function parseFlexibleDate(dateStr) {
+const parseFlexibleDate = function (dateStr) {
   if (!dateStr) return null
 
   const parsed = new Date(dateStr)
@@ -164,6 +164,7 @@ function parseFlexibleDate(dateStr) {
   if (germanMatch) {
     const germanMonths = {
       januar: 0,
+      februar: 1,
       märz: 2,
       april: 3,
       mai: 4,
@@ -223,8 +224,10 @@ function parseFlexibleDate(dateStr) {
 
   return null
 }
+exports.parseFlexibleDate = parseFlexibleDate
 
-function parseGermanOutlookReply(text) {
+const parseGermanOutlookReply = function (text) {
+  if (typeof text !== 'string' || !text.length) return null
   const lines = text.split(/\r?\n/)
   let vonIndex = -1
   let betreffIndex = -1
@@ -249,6 +252,7 @@ function parseGermanOutlookReply(text) {
 
   return null
 }
+exports.parseGermanOutlookReply = parseGermanOutlookReply
 
 exports.load_dropbox_ini = function () {
   this.cfg = this.config.get(
