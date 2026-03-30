@@ -16,7 +16,7 @@ jobs:
       - run: npm cache clean --force
       - run: npm install --legacy-peer-deps
       - run: npm run lint
-      - run: npm run prettier
+      - run: npm run prettier --fix
 
   ubuntu:
     needs: [lint]
