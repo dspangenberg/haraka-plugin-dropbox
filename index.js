@@ -136,7 +136,10 @@ exports.post_to_dropbox = function (next, connection) {
 
       axios
         .post(url, { payload: _email }, { timeout: 10000 })
-        .then(() => next(OK))
+        .then(() => {
+          connection.transaction.notes.discard = [1 | true]
+          next()
+        })
         .catch((err) => {
           plugin.logerror(`Dropbox post failed: ${err.message}`)
           next(DENYSOFT, 'Dropbox webhook temporarily unavailable')

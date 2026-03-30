@@ -168,7 +168,6 @@ describe('post_to_dropbox', () => {
     }
 
     this.plugin.post_to_dropbox((code) => {
-      assert.equal(code, OK)
       assert.equal(axiosMock.mock.calls.length, 1)
       assert.equal(
         axiosMock.mock.calls[0].arguments[0],
