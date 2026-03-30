@@ -87,10 +87,11 @@ exports.post_to_dropbox = function (next, connection) {
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
         from = forwardResult.email.from.address
-        date = forwardResult.email.date
-          ? new Date(forwardResult.email.date).toISOString()
-          : date
-        plugin.loginfo(date)
+        plugin.loginfo(forwardResult.email.date)
+        if (forwardResult.email.date) {
+          const parsedDate = new Date(forwardResult.email.date)
+          date = !isNaN(parsedDate) ? parsedDate.toISOString() : date
+        }
         const germanReplyResult = parseGermanOutlookReply(
           forwardResult.email.body,
         )
