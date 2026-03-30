@@ -167,7 +167,7 @@ describe('post_to_dropbox', () => {
       dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
     }
 
-    this.plugin.post_to_dropbox((code) => {
+    this.plugin.post_to_dropbox(() => {
       assert.equal(axiosMock.mock.calls.length, 1)
       assert.equal(
         axiosMock.mock.calls[0].arguments[0],
@@ -234,5 +234,310 @@ describe('post_to_dropbox', () => {
       dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
     }
     this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('parses German date format in forwarded emails', (t, done) => {
+    const germanForwardEmail = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: WG: Test Email',
+      'Message-ID: <test123@example.com>',
+      'Date: 15. Januar 2024 um 10:30:00',
+      '',
+      '-----Original Message-----',
+      'From: original@example.com',
+      'Date: 14. Januar 2024 09:15',
+      'Subject: Test Email',
+      '',
+      'Original body content',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      const date = new Date(body.payload.date)
+      assert.equal(date.getFullYear(), 2024)
+      assert.equal(date.getMonth(), 0)
+      assert.equal(date.getDate(), 14)
+      assert.equal(date.getHours(), 9)
+      assert.equal(date.getMinutes(), 15)
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream =
+      createEmailStream(germanForwardEmail)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('parses English date format in forwarded emails', (t, done) => {
+    const englishForwardEmail = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: FW: Test Email',
+      'Message-ID: <test123@example.com>',
+      '',
+      '-----Original Message-----',
+      'From: original@example.com',
+      'Date: 14 March 2024, 09:15:00',
+      'Subject: Test Email',
+      '',
+      'Original body content',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      const date = new Date(body.payload.date)
+      assert.equal(date.getFullYear(), 2024)
+      assert.equal(date.getMonth(), 2)
+      assert.equal(date.getDate(), 14)
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream =
+      createEmailStream(englishForwardEmail)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('parses German Outlook reply format (Von:/Betreff:)', (t, done) => {
+    const germanOutlookReply = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: AW: Test',
+      'Message-ID: <reply@example.com>',
+      '',
+      'Reply content here',
+      '',
+      'Von: original@example.com',
+      'Gesendet: Montag, 20. Januar 2024 14:30',
+      'Betreff: RE: Test',
+      '',
+      'Original message content',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      assert.equal(body.payload.plain_body, 'Reply content here')
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream =
+      createEmailStream(germanOutlookReply)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('uses ISO date when parsing fails in parseFlexibleDate', (t, done) => {
+    const emailWithISODate = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: Test Email',
+      'Message-ID: <test123@example.com>',
+      'Date: 2024-01-15T10:30:00Z',
+      '',
+      'Hello World',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      const date = new Date(body.payload.date)
+      assert.equal(date.getFullYear(), 2024)
+      assert.equal(date.getMonth(), 0)
+      assert.equal(date.getDate(), 15)
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream =
+      createEmailStream(emailWithISODate)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('returns null for invalid date format in parseFlexibleDate', (t, done) => {
+    const emailWithInvalidDate = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: Test Email',
+      'Message-ID: <test123@example.com>',
+      'Date: not-a-date',
+      '',
+      'Hello World',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      const date = new Date(body.payload.date)
+      assert.ok(date instanceof Date)
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream =
+      createEmailStream(emailWithInvalidDate)
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+
+  it('uses Date.now() as fallback messageId', (t, done) => {
+    const emailWithoutMessageId = [
+      'From: sender@example.com',
+      'To: test@example.com',
+      'Subject: Test Email',
+      '',
+      'Hello World',
+    ].join('\r\n')
+
+    mock.method(axios, 'post', (url, body) => {
+      assert.ok(body.payload.message_id.includes('@haraka'))
+      done()
+      return Promise.resolve({})
+    })
+
+    this.connection.transaction.message_stream = createEmailStream(
+      emailWithoutMessageId,
+    )
+    this.connection.transaction.rcpt_to = [
+      { user: 'test', host: 'example.com' },
+    ]
+    this.plugin.cfg = {
+      dropboxes: { 'test@example.com': 'https://dropbox.example.com' },
+    }
+    this.plugin.post_to_dropbox(() => {}, this.connection)
+  })
+})
+
+describe('parseFlexibleDate', () => {
+  it('parses ISO date format', () => {
+    const result = this.plugin.parseFlexibleDate('2024-03-15T10:30:00Z')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getFullYear(), 2024)
+    assert.equal(result.getMonth(), 2)
+    assert.equal(result.getDate(), 15)
+  })
+
+  it('parses German date format without time', () => {
+    const result = this.plugin.parseFlexibleDate('15. Januar 2024')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getFullYear(), 2024)
+    assert.equal(result.getMonth(), 0)
+    assert.equal(result.getDate(), 15)
+    assert.equal(result.getHours(), 0)
+  })
+
+  it('parses German date format with time', () => {
+    const result = this.plugin.parseFlexibleDate('15. Januar 2024 um 10:30')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getFullYear(), 2024)
+    assert.equal(result.getMonth(), 0)
+    assert.equal(result.getDate(), 15)
+    assert.equal(result.getHours(), 10)
+    assert.equal(result.getMinutes(), 30)
+  })
+
+  it('parses German date format with seconds', () => {
+    const result = this.plugin.parseFlexibleDate('15. Januar 2024 um 10:30:45')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getHours(), 10)
+    assert.equal(result.getMinutes(), 30)
+    assert.equal(result.getSeconds(), 45)
+  })
+
+  it('parses English date format without time', () => {
+    const result = this.plugin.parseFlexibleDate('15 March 2024')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getFullYear(), 2024)
+    assert.equal(result.getMonth(), 2)
+    assert.equal(result.getDate(), 15)
+  })
+
+  it('parses English date format with time', () => {
+    const result = this.plugin.parseFlexibleDate('15 March 2024, 10:30:45')
+    assert.ok(result instanceof Date)
+    assert.equal(result.getHours(), 10)
+    assert.equal(result.getMinutes(), 30)
+    assert.equal(result.getSeconds(), 45)
+  })
+
+  it('returns null for invalid date', () => {
+    const result = this.plugin.parseFlexibleDate('invalid date')
+    assert.equal(result, null)
+  })
+
+  it('returns null for empty string', () => {
+    const result = this.plugin.parseFlexibleDate('')
+    assert.equal(result, null)
+  })
+
+  it('returns null for null input', () => {
+    const result = this.plugin.parseFlexibleDate(null)
+    assert.equal(result, null)
+  })
+
+  it('returns null for undefined input', () => {
+    const result = this.plugin.parseFlexibleDate(undefined)
+    assert.equal(result, null)
+  })
+})
+
+describe('parseGermanOutlookReply', () => {
+  it('extracts reply text from German Outlook format', () => {
+    const text = [
+      'This is my reply',
+      '',
+      'Von: sender@example.com',
+      'Gesendet: Montag, 20. Januar 2024 14:30',
+      'Betreff: RE: Test',
+      '',
+      'Original message here',
+    ].join('\r\n')
+    const result = this.plugin.parseGermanOutlookReply(text)
+    assert.equal(result, 'This is my reply')
+  })
+
+  it('returns null when no Von: line found', () => {
+    const text = ['Just some text', 'Betreff: Test'].join('\r\n')
+    const result = this.plugin.parseGermanOutlookReply(text)
+    assert.equal(result, null)
+  })
+
+  it('returns null when no Betreff: line after Von:', () => {
+    const text = [
+      'Just some text',
+      '',
+      'Von: sender@example.com',
+      'Something else here',
+    ].join('\r\n')
+    const result = this.plugin.parseGermanOutlookReply(text)
+    assert.equal(result, null)
+  })
+
+  it('returns null when reply text is empty', () => {
+    const text = ['', 'Von: sender@example.com', 'Betreff: Test'].join('\r\n')
+    const result = this.plugin.parseGermanOutlookReply(text)
+    assert.equal(result, null)
   })
 })
