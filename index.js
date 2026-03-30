@@ -6,7 +6,6 @@ const EmailReplyParser = require('email-reply-parser').default
 const safeStringify = require('safe-stringify').default
 const EmailForwardParser = require('email-forward-parser')
 
-
 exports.register = function () {
   this.load_dropbox_ini()
 
@@ -76,14 +75,14 @@ exports.post_to_dropbox = function (next, connection) {
         : mail.html.replace(/<[^>]*>/g, '')
       const replayParser = new EmailReplyParser()
 
-      let date = mail.date || Date.now();
+      let date = mail.date || Date.now()
 
       const forwardResult = new EmailForwardParser().read(
         text_body,
         mail.subject,
       )
 
-      plugin.loginfo(safeStringify(mail));
+      plugin.loginfo(safeStringify(mail))
 
       if (forwardResult.forwarded) {
         subject = forwardResult.email.subject || mail.subject
