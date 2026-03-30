@@ -227,6 +227,7 @@ const parseFlexibleDate = function (dateStr) {
 exports.parseFlexibleDate = parseFlexibleDate
 
 const parseGermanOutlookReply = function (text) {
+  if (typeof text !== 'string' || !text.length) return null
   const lines = text.split(/\r?\n/)
   let vonIndex = -1
   let betreffIndex = -1
