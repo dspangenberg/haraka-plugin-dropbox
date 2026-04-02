@@ -13,8 +13,12 @@ function mockRequest(statusCode = 200, bodyCallback) {
     let written = ''
     const req = {
       setTimeout() {},
-      on() { return req },
-      write(data) { written += data },
+      on() {
+        return req
+      },
+      write(data) {
+        written += data
+      },
       end() {
         if (bodyCallback) bodyCallback(JSON.parse(written))
         if (callback) callback({ statusCode, resume() {} })
@@ -215,10 +219,14 @@ describe('post_to_dropbox', () => {
       'Reply body',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      assert.notEqual(body.payload.in_reply_to, false)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        assert.notEqual(body.payload.in_reply_to, false)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(rawEmailWithReply)
@@ -232,10 +240,14 @@ describe('post_to_dropbox', () => {
   })
 
   it('sets in_reply_to to false when In-Reply-To header is absent', (t, done) => {
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      assert.equal(body.payload.in_reply_to, false)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        assert.equal(body.payload.in_reply_to, false)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
@@ -263,15 +275,19 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      const date = new Date(body.payload.date)
-      assert.equal(date.getFullYear(), 2024)
-      assert.equal(date.getMonth(), 0)
-      assert.equal(date.getDate(), 14)
-      assert.equal(date.getHours(), 9)
-      assert.equal(date.getMinutes(), 15)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        const date = new Date(body.payload.date)
+        assert.equal(date.getFullYear(), 2024)
+        assert.equal(date.getMonth(), 0)
+        assert.equal(date.getDate(), 14)
+        assert.equal(date.getHours(), 9)
+        assert.equal(date.getMinutes(), 15)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(germanForwardEmail)
@@ -299,13 +315,17 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      const date = new Date(body.payload.date)
-      assert.equal(date.getFullYear(), 2024)
-      assert.equal(date.getMonth(), 2)
-      assert.equal(date.getDate(), 14)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        const date = new Date(body.payload.date)
+        assert.equal(date.getFullYear(), 2024)
+        assert.equal(date.getMonth(), 2)
+        assert.equal(date.getDate(), 14)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(englishForwardEmail)
@@ -334,10 +354,14 @@ describe('post_to_dropbox', () => {
       'Original message content',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      assert.equal(body.payload.plain_body, 'Reply content here')
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        assert.equal(body.payload.plain_body, 'Reply content here')
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(germanOutlookReply)
@@ -361,13 +385,17 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      const date = new Date(body.payload.date)
-      assert.equal(date.getFullYear(), 2024)
-      assert.equal(date.getMonth(), 0)
-      assert.equal(date.getDate(), 15)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        const date = new Date(body.payload.date)
+        assert.equal(date.getFullYear(), 2024)
+        assert.equal(date.getMonth(), 0)
+        assert.equal(date.getDate(), 15)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithISODate)
@@ -391,11 +419,15 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      const date = new Date(body.payload.date)
-      assert.ok(date instanceof Date)
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        const date = new Date(body.payload.date)
+        assert.ok(date instanceof Date)
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithInvalidDate)
@@ -417,10 +449,14 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(https, 'request', mockRequest(200, (body) => {
-      assert.ok(body.payload.message_id.includes('@haraka'))
-      done()
-    }))
+    mock.method(
+      https,
+      'request',
+      mockRequest(200, (body) => {
+        assert.ok(body.payload.message_id.includes('@haraka'))
+        done()
+      }),
+    )
 
     this.connection.transaction.message_stream = createEmailStream(
       emailWithoutMessageId,
