@@ -3,7 +3,7 @@
 
 # haraka-plugin-dropbox
 
-Haraka plugin that forwards incoming emails to configured Dropbox webhook URLs. Each recipient address can be mapped to a specific Dropbox webhook endpoint in the configuration.
+[Haraka](https://github.com/haraka/Haraka) plugin that forwards incoming emails to configured Dropbox webhook URLs. Each recipient address can be mapped to a specific Dropbox webhook endpoint in the configuration.
 
 ## INSTALL
 
