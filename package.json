@@ -1,6 +1,6 @@
 {
   "name": "haraka-plugin-dropbox",
-  "version": "1.1.0",
+  "version": "0.9.1",
   "description": "Haraka plugin that forwards incoming emails to configured Dropbox webhook URLs",
   "main": "index.js",
   "files": [
@@ -48,6 +48,7 @@
     "semi": false
   },
   "dependencies": {
+    "chrono-node": "^2.9.0",
     "email-forward-parser": "github:dspangenberg/email-forward-parser#95616654c0557e93b29897d640775332ef8868e8",
     "email-reply-parser": "github:dspangenberg/email-reply-parser#da7cd3ebc7c9ec4f29d19b2ed0d4aa18efb5b5a4",
     "haraka-dsn": "^1.1.0",

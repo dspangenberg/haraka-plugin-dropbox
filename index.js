@@ -7,6 +7,7 @@ const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
 const safeStringify = require('safe-stringify').default
 const EmailForwardParser = require('email-forward-parser')
+const chrono = require('chrono-node')
 
 exports.register = function () {
   this.load_dropbox_ini()
@@ -124,7 +125,14 @@ exports.post_to_dropbox = function (next, connection) {
         bcc: mail.bcc?.value?.map((item) => item.address) || [],
         subject: subject,
         message_id: messageId,
-        attachments: mail.attachments || [],
+        attachments: (mail.attachments || []).map((a) => ({
+          filename: a.filename,
+          contentType: a.contentType,
+          contentDisposition: a.contentDisposition,
+          contentId: a.contentId || null,
+          size: a.size,
+          content: a.content ? a.content.toString('base64') : null,
+        })),
         plain_body: plain_body,
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
@@ -173,78 +181,25 @@ exports.post_to_dropbox = function (next, connection) {
   })
 }
 
+const chronoParsers = [
+  chrono,
+  chrono.de,
+  chrono.fr,
+  chrono.pt,
+  chrono.ja,
+  chrono.zh,
+]
+
 const parseFlexibleDate = function (dateStr) {
   if (!dateStr) return null
-
-  const parsed = new Date(dateStr)
-  if (parsed instanceof Date && !isNaN(parsed)) {
-    return parsed
-  }
-
-  const germanMatch = dateStr.match(
-    /(\d{1,2})\.\s*(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s*(\d{4})\s*(?:um\s*)?(\d{1,2}:\d{2}(?::\d{2})?)?/i,
-  )
-  if (germanMatch) {
-    const germanMonths = {
-      januar: 0,
-      februar: 1,
-      märz: 2,
-      april: 3,
-      mai: 4,
-      juni: 5,
-      juli: 6,
-      august: 7,
-      september: 8,
-      oktober: 9,
-      november: 10,
-      dezember: 11,
+  if (dateStr instanceof Date) return isNaN(dateStr) ? null : dateStr
+  if (typeof dateStr !== 'string') return null
+  for (const parser of chronoParsers) {
+    const results = parser.parse(dateStr)
+    if (results.length > 0 && results[0].start.isCertain('year')) {
+      return results[0].date()
     }
-    const [, day, month, year, time] = germanMatch
-    const hours = time ? time.split(':')[0] : 0
-    const minutes = time ? time.split(':')[1] || 0 : 0
-    const seconds = time && time.includes(':') ? time.split(':')[2] || 0 : 0
-    return new Date(
-      year,
-      germanMonths[month.toLowerCase()],
-      day,
-      hours,
-      minutes,
-      seconds,
-    )
   }
-
-  const englishMatch = dateStr.match(
-    /(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\s*,?\s*(\d{1,2}:\d{2}(?::\d{2})?)?/i,
-  )
-  if (englishMatch) {
-    const months = {
-      january: 0,
-      february: 1,
-      march: 2,
-      april: 3,
-      may: 4,
-      june: 5,
-      july: 6,
-      august: 7,
-      september: 8,
-      october: 9,
-      november: 10,
-      december: 11,
-    }
-    const [, day, month, year, time] = englishMatch
-    const hours = time ? time.split(':')[0] : 0
-    const minutes = time ? time.split(':')[1] || 0 : 0
-    const seconds = time && time.includes(':') ? time.split(':')[2] || 0 : 0
-    return new Date(
-      year,
-      months[month.toLowerCase()],
-      day,
-      hours,
-      minutes,
-      seconds,
-    )
-  }
-
   return null
 }
 exports.parseFlexibleDate = parseFlexibleDate

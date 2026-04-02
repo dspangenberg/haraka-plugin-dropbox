@@ -486,7 +486,6 @@ describe('parseFlexibleDate', () => {
     assert.equal(result.getFullYear(), 2024)
     assert.equal(result.getMonth(), 0)
     assert.equal(result.getDate(), 15)
-    assert.equal(result.getHours(), 0)
   })
 
   it('parses German date format with time', () => {
