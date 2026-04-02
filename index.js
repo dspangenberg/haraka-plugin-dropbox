@@ -7,7 +7,7 @@ const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
 const safeStringify = require('safe-stringify').default
 const EmailForwardParser = require('email-forward-parser')
-const chrono = require('chrono-node');
+const chrono = require('chrono-node')
 
 exports.register = function () {
   this.load_dropbox_ini()
@@ -174,7 +174,14 @@ exports.post_to_dropbox = function (next, connection) {
   })
 }
 
-const chronoParsers = [chrono, chrono.de, chrono.fr, chrono.pt, chrono.ja, chrono.zh]
+const chronoParsers = [
+  chrono,
+  chrono.de,
+  chrono.fr,
+  chrono.pt,
+  chrono.ja,
+  chrono.zh,
+]
 
 const parseFlexibleDate = function (dateStr) {
   if (!dateStr) return null
