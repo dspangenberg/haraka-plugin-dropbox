@@ -6,7 +6,24 @@ const { afterEach, beforeEach, describe, it, mock } = require('node:test')
 
 // npm modules
 const fixtures = require('haraka-test-fixtures')
-const axios = require('axios')
+const https = require('node:https')
+
+function mockRequest(statusCode = 200, bodyCallback) {
+  return (opts, callback) => {
+    let written = ''
+    const req = {
+      setTimeout() {},
+      on() { return req },
+      write(data) { written += data },
+      end() {
+        if (bodyCallback) bodyCallback(JSON.parse(written))
+        if (callback) callback({ statusCode, resume() {} })
+      },
+      destroy() {},
+    }
+    return req
+  }
+}
 
 // start of tests
 //    assert: https://nodejs.org/api/assert.html
@@ -158,7 +175,7 @@ describe('post_to_dropbox', () => {
   })
 
   it('marks the message for discard and posts to dropbox when rcpt matches', (t, done) => {
-    const axiosMock = mock.method(axios, 'post', () => Promise.resolve({}))
+    const fetchMock = mock.method(https, 'request', mockRequest(200))
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
       { user: 'test', host: 'example.com' },
@@ -168,11 +185,7 @@ describe('post_to_dropbox', () => {
     }
 
     this.plugin.post_to_dropbox(() => {
-      assert.equal(axiosMock.mock.calls.length, 1)
-      assert.equal(
-        axiosMock.mock.calls[0].arguments[0],
-        'https://dropbox.example.com',
-      )
+      assert.equal(fetchMock.mock.calls.length, 1)
       assert.ok(this.connection.transaction.notes.discard)
       done()
     }, this.connection)
@@ -202,11 +215,10 @@ describe('post_to_dropbox', () => {
       'Reply body',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       assert.notEqual(body.payload.in_reply_to, false)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(rawEmailWithReply)
@@ -220,11 +232,10 @@ describe('post_to_dropbox', () => {
   })
 
   it('sets in_reply_to to false when In-Reply-To header is absent', (t, done) => {
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       assert.equal(body.payload.in_reply_to, false)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
@@ -252,7 +263,7 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       const date = new Date(body.payload.date)
       assert.equal(date.getFullYear(), 2024)
       assert.equal(date.getMonth(), 0)
@@ -260,8 +271,7 @@ describe('post_to_dropbox', () => {
       assert.equal(date.getHours(), 9)
       assert.equal(date.getMinutes(), 15)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(germanForwardEmail)
@@ -289,14 +299,13 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       const date = new Date(body.payload.date)
       assert.equal(date.getFullYear(), 2024)
       assert.equal(date.getMonth(), 2)
       assert.equal(date.getDate(), 14)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(englishForwardEmail)
@@ -325,11 +334,10 @@ describe('post_to_dropbox', () => {
       'Original message content',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       assert.equal(body.payload.plain_body, 'Reply content here')
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(germanOutlookReply)
@@ -353,14 +361,13 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       const date = new Date(body.payload.date)
       assert.equal(date.getFullYear(), 2024)
       assert.equal(date.getMonth(), 0)
       assert.equal(date.getDate(), 15)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithISODate)
@@ -384,12 +391,11 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       const date = new Date(body.payload.date)
       assert.ok(date instanceof Date)
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithInvalidDate)
@@ -411,11 +417,10 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(axios, 'post', (url, body) => {
+    mock.method(https, 'request', mockRequest(200, (body) => {
       assert.ok(body.payload.message_id.includes('@haraka'))
       done()
-      return Promise.resolve({})
-    })
+    }))
 
     this.connection.transaction.message_stream = createEmailStream(
       emailWithoutMessageId,

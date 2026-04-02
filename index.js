@@ -1,5 +1,7 @@
 'use strict'
-const axios = require('axios')
+const https = require('node:https')
+const http = require('node:http')
+const { URL } = require('node:url')
 const simpleParser = require('mailparser').simpleParser
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
@@ -134,16 +136,37 @@ exports.post_to_dropbox = function (next, connection) {
       _email.in_reply_to =
         !!mail.inReplyTo && mail.inReplyTo.length > 0 ? mail.inReplyTo : false
 
-      axios
-        .post(url, { payload: _email }, { timeout: 10000 })
-        .then(() => {
+      const body = JSON.stringify({ payload: _email })
+      const parsedUrl = new URL(url)
+      const lib = parsedUrl.protocol === 'https:' ? https : http
+      const req = lib.request(
+        {
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port,
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
+          },
+        },
+        (res) => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            plugin.logerror(`Dropbox post failed: HTTP ${res.statusCode}`)
+            return next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
+          }
+          res.resume()
           connection.transaction.notes.discard = [1 | true]
           next()
-        })
-        .catch((err) => {
-          plugin.logerror(`Dropbox post failed: ${err.message}`)
-          next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
-        })
+        },
+      )
+      req.setTimeout(10000, () => req.destroy(new Error('timeout')))
+      req.on('error', (err) => {
+        plugin.logerror(`Dropbox post failed: ${err.message}`)
+        next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
+      })
+      req.write(body)
+      req.end()
     } else {
       next(DENY, DSN.no_such_user())
     }
