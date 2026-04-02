@@ -48,6 +48,7 @@
     "semi": false
   },
   "dependencies": {
+    "chrono-node": "^2.9.0",
     "email-forward-parser": "github:dspangenberg/email-forward-parser#95616654c0557e93b29897d640775332ef8868e8",
     "email-reply-parser": "github:dspangenberg/email-reply-parser#da7cd3ebc7c9ec4f29d19b2ed0d4aa18efb5b5a4",
     "haraka-dsn": "^1.1.0",
