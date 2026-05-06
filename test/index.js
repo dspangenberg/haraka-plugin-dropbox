@@ -6,34 +6,55 @@ const { afterEach, beforeEach, describe, it, mock } = require('node:test')
 
 // npm modules
 const fixtures = require('haraka-test-fixtures')
-const https = require('node:https')
 
-function mockRequest(statusCode = 200, bodyCallback) {
-  return (opts, callback) => {
-    let written = ''
-    const req = {
-      setTimeout() {},
-      on() {
-        return req
-      },
-      write(data) {
-        written += data
-      },
-      end() {
-        if (bodyCallback) bodyCallback(JSON.parse(written))
-        if (callback) callback({ statusCode, resume() {} })
-      },
-      destroy() {},
+// Haraka constants
+global.OK = 902
+global.DENY = 900
+global.DENYSOFT = 901
+
+let ofetchMockImpl = null
+
+function createOfetchMock(statusCode = 200, bodyCallback) {
+  return async function mockedOfetch(url, options) {
+    ofetchMockImpl.callCount++
+    ofetchMockImpl.lastUrl = url
+    ofetchMockImpl.lastOptions = options
+    if (bodyCallback) {
+      bodyCallback(options.body)
     }
-    return req
+    if (statusCode >= 400) {
+      const error = new Error(`HTTP ${statusCode}`)
+      error.data = statusCode
+      throw error
+    }
+    return { status: statusCode }
   }
+}
+
+function mockOfetch(impl) {
+  const ofetchPath = require.resolve('ofetch')
+  delete require.cache[ofetchPath]
+  require.cache[ofetchPath] = {
+    id: ofetchPath,
+    filename: ofetchPath,
+    loaded: true,
+    exports: { ofetch: impl },
+  }
+}
+
+function reloadPlugin() {
+  const pluginPath = path.resolve(__dirname, '..')
+  delete require.cache[require.resolve(pluginPath)]
+  return new fixtures.plugin(pluginPath)
 }
 
 // start of tests
 //    assert: https://nodejs.org/api/assert.html
 
 beforeEach(() => {
-  this.plugin = new fixtures.plugin(path.join(__dirname, '..'))
+  ofetchMockImpl = { callCount: 0, lastUrl: null, lastOptions: null }
+  mockOfetch(createOfetchMock(200))
+  this.plugin = reloadPlugin()
 
   // replace vm-compiled fns with instrumented copies for coverage tracking
   if (process.env.HARAKA_COVERAGE) {
@@ -165,21 +186,24 @@ describe('parse_body', () => {
 })
 
 describe('post_to_dropbox', () => {
-  it('calls next immediately when no message_stream', (t, done) => {
+  it('calls next immediately when no message_stream', () => {
     this.connection.transaction.message_stream = null
-    this.plugin.post_to_dropbox(done, this.connection)
+    let called = false
+    this.plugin.post_to_dropbox(() => {
+      called = true
+    }, this.connection)
+    assert.ok(called)
   })
 
-  it('calls next when simpleParser errors', (t, done) => {
+  it('calls next when simpleParser errors', () => {
     const errStream = new Readable({ read() {} })
     errStream.readable = true
     this.connection.transaction.message_stream = errStream
-    this.plugin.post_to_dropbox(() => done(), this.connection)
+    this.plugin.post_to_dropbox(() => {}, this.connection)
     process.nextTick(() => errStream.emit('error', new Error('parse error')))
   })
 
   it('marks the message for discard and posts to dropbox when rcpt matches', (t, done) => {
-    const fetchMock = mock.method(https, 'request', mockRequest(200))
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
       { user: 'test', host: 'example.com' },
@@ -189,7 +213,7 @@ describe('post_to_dropbox', () => {
     }
 
     this.plugin.post_to_dropbox(() => {
-      assert.equal(fetchMock.mock.calls.length, 1)
+      assert.equal(ofetchMockImpl.callCount, 1)
       assert.ok(this.connection.transaction.notes.discard)
       done()
     }, this.connection)
@@ -219,14 +243,18 @@ describe('post_to_dropbox', () => {
       'Reply body',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        assert.notEqual(body.payload.in_reply_to, false)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        assert.notEqual(parsed.payload.in_reply_to, false)
         done()
       }),
     )
+
+    // reload plugin so it picks up the new mock
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(rawEmailWithReply)
@@ -240,14 +268,17 @@ describe('post_to_dropbox', () => {
   })
 
   it('sets in_reply_to to false when In-Reply-To header is absent', (t, done) => {
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        assert.equal(body.payload.in_reply_to, false)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        assert.equal(parsed.payload.in_reply_to, false)
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream = createEmailStream(RAW_EMAIL)
     this.connection.transaction.rcpt_to = [
@@ -275,11 +306,10 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        const date = new Date(body.payload.date)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        const date = new Date(parsed.payload.date)
         assert.equal(date.getFullYear(), 2024)
         assert.equal(date.getMonth(), 0)
         assert.equal(date.getDate(), 14)
@@ -288,6 +318,10 @@ describe('post_to_dropbox', () => {
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(germanForwardEmail)
@@ -315,17 +349,20 @@ describe('post_to_dropbox', () => {
       'Original body content',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        const date = new Date(body.payload.date)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        const date = new Date(parsed.payload.date)
         assert.equal(date.getFullYear(), 2024)
         assert.equal(date.getMonth(), 2)
         assert.equal(date.getDate(), 14)
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(englishForwardEmail)
@@ -354,14 +391,17 @@ describe('post_to_dropbox', () => {
       'Original message content',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        assert.equal(body.payload.plain_body, 'Reply content here')
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        assert.equal(parsed.payload.plain_body, 'Reply content here')
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(germanOutlookReply)
@@ -385,17 +425,20 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        const date = new Date(body.payload.date)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        const date = new Date(parsed.payload.date)
         assert.equal(date.getFullYear(), 2024)
         assert.equal(date.getMonth(), 0)
         assert.equal(date.getDate(), 15)
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithISODate)
@@ -419,15 +462,18 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        const date = new Date(body.payload.date)
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        const date = new Date(parsed.payload.date)
         assert.ok(date instanceof Date)
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream =
       createEmailStream(emailWithInvalidDate)
@@ -449,14 +495,17 @@ describe('post_to_dropbox', () => {
       'Hello World',
     ].join('\r\n')
 
-    mock.method(
-      https,
-      'request',
-      mockRequest(200, (body) => {
-        assert.ok(body.payload.message_id.includes('@haraka'))
+    mockOfetch(
+      createOfetchMock(200, (body) => {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body
+        assert.ok(parsed.payload.message_id.includes('@haraka'))
         done()
       }),
     )
+
+    this.plugin = reloadPlugin()
+    this.connection = fixtures.connection.createConnection({})
+    this.connection.init_transaction()
 
     this.connection.transaction.message_stream = createEmailStream(
       emailWithoutMessageId,

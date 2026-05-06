@@ -1,11 +1,8 @@
 'use strict'
-const https = require('node:https')
-const http = require('node:http')
-const { URL } = require('node:url')
+const { ofetch } = require('ofetch')
 const simpleParser = require('mailparser').simpleParser
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
-const safeStringify = require('safe-stringify').default
 const EmailForwardParser = require('email-forward-parser')
 const chrono = require('chrono-node')
 
@@ -121,60 +118,37 @@ exports.post_to_dropbox = function (next, connection) {
         from: from || '',
         to,
         rcpt_to: rcpt_to,
+        headers: Object.fromEntries(mail.headers) || {},
         cc: mail.cc?.value?.map((item) => item.address) || [],
         bcc: mail.bcc?.value?.map((item) => item.address) || [],
         subject: subject,
         message_id: messageId,
-        attachments: (mail.attachments || []).map((a) => ({
-          filename: a.filename,
-          contentType: a.contentType,
-          contentDisposition: a.contentDisposition,
-          contentId: a.contentId || null,
-          size: a.size,
-          content: a.content ? a.content.toString('base64') : null,
-        })),
+        attachments: mail.attachments || [],
         plain_body: plain_body,
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
         text_as_html: mail.textAsHtml,
         date,
+        priority: mail.priority || 'normal',
         references: mail.references || [],
       }
 
       _email.in_reply_to =
         !!mail.inReplyTo && mail.inReplyTo.length > 0 ? mail.inReplyTo : false
 
-      const body = JSON.stringify({ payload: _email })
-      const parsedUrl = new URL(url)
-      const lib = parsedUrl.protocol === 'https:' ? https : http
-      const req = lib.request(
-        {
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port,
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body),
-          },
-        },
-        (res) => {
-          if (res.statusCode < 200 || res.statusCode >= 300) {
-            plugin.logerror(`Dropbox post failed: HTTP ${res.statusCode}`)
-            return next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
-          }
-          res.resume()
+      ofetch(url, {
+        method: 'POST',
+        body: { payload: _email },
+        timeout: 10000,
+      })
+        .then(() => {
           connection.transaction.notes.discard = [1 | true]
           next()
-        },
-      )
-      req.setTimeout(10000, () => req.destroy(new Error('timeout')))
-      req.on('error', (err) => {
-        plugin.logerror(`Dropbox post failed: ${err.message}`)
-        next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
-      })
-      req.write(body)
-      req.end()
+        })
+        .catch((err) => {
+          plugin.logerror(`Dropbox post failed: ${err.message}`)
+          next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
+        })
     } else {
       next(DENY, DSN.no_such_user())
     }
