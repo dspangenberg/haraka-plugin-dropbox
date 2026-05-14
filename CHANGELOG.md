@@ -1,3 +1,7 @@
+## 0.9.3 - 2026-05-14
+
+- Fixed chrono-date problems with forwarded mails
+
 ## 0.9.2 - 2026-05-06
 
 - Replaced http/https by ofetch
