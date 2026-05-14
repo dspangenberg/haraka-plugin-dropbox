@@ -77,10 +77,7 @@ exports.post_to_dropbox = function (next, connection) {
 
       let to = mail.to?.value?.map((item) => item.address) || []
 
-      let date =
-        mail.date instanceof Date && !isNaN(mail.date)
-          ? mail.date
-          : parseFlexibleDate(mail.date) || new Date()
+      let date = flexibleDate(mail.date)
 
       const forwardResult = new EmailForwardParser().read(
         text_body,
@@ -92,9 +89,9 @@ exports.post_to_dropbox = function (next, connection) {
         to = forwardResult.email.to.map((item) => item.address)
         plugin.loginfo(forwardResult.email.date)
         if (forwardResult.email.date) {
-          const parsedDate = parseFlexibleDate(forwardResult.email.date)
-          if (parsedDate) {
-            date = parsedDate
+          const fwdDate = flexibleDate(forwardResult.email.date)
+          if (fwdDate) {
+            date = fwdDate
           }
         }
         const germanReplyResult = parseGermanOutlookReply(
@@ -128,7 +125,10 @@ exports.post_to_dropbox = function (next, connection) {
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
         text_as_html: mail.textAsHtml,
-        date,
+        date:
+          date instanceof Date && !isNaN(date)
+            ? date.toISOString()
+            : new Date().toISOString(),
         priority: mail.priority || 'normal',
         references: mail.references || [],
       }
@@ -163,6 +163,16 @@ const chronoParsers = [
   chrono.ja,
   chrono.zh,
 ]
+
+const flexibleDate = function (input) {
+  try {
+    const d = input instanceof Date ? input : parseFlexibleDate(input)
+    return d instanceof Date && !isNaN(d) ? new Date(d) : null
+  } catch {
+    return null
+  }
+}
+exports.flexibleDate = flexibleDate
 
 const parseFlexibleDate = function (dateStr) {
   if (!dateStr) return null
