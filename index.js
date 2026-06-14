@@ -50,7 +50,7 @@ exports.post_to_dropbox = function (next, connection) {
   simpleParser(connection.transaction.message_stream, (err, mail) => {
     if (err) {
       plugin.logerror('simpleParser error: ' + err)
-      return next()
+      next(DENYSOFT, err.message)
     }
 
     plugin.loginfo('simpleParser completed')
@@ -120,7 +120,14 @@ exports.post_to_dropbox = function (next, connection) {
         bcc: mail.bcc?.value?.map((item) => item.address) || [],
         subject: subject,
         message_id: messageId,
-        attachments: mail.attachments || [],
+        attachments: (mail.attachments || []).map((a) => ({
+          filename: a.filename,
+          contentType: a.contentType,
+          contentDisposition: a.contentDisposition,
+          contentId: a.contentId || null,
+          size: a.size,
+          content: a.content ? a.content.toString('base64') : null,
+        })),
         plain_body: plain_body,
         html: mail.html ? mail.html : mail.textAsHtml,
         text: text_body,
@@ -147,7 +154,7 @@ exports.post_to_dropbox = function (next, connection) {
         })
         .catch((err) => {
           plugin.logerror(`Dropbox post failed: ${err.message}`)
-          next(DENYSOFT, 'Dropbox webhook temporarily unavailable')
+          next(DENYSOFT, err.message)
         })
     } else {
       next(DENY, DSN.no_such_user())

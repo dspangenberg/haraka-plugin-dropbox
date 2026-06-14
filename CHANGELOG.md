@@ -1,3 +1,7 @@
+# 0.9.4 - 2026-06-14
+- 
+- Convert attachments to base64 was removed
+
 ## 0.9.3 - 2026-05-14
 
 - Fixed chrono-date problems with forwarded mails
