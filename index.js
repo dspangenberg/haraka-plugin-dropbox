@@ -50,7 +50,7 @@ exports.post_to_dropbox = function (next, connection) {
   simpleParser(connection.transaction.message_stream, (err, mail) => {
     if (err) {
       plugin.logerror('simpleParser error: ' + err)
-      next(DENYSOFT, err.message)
+      return next(DENYSOFT, err.message)
     }
 
     plugin.loginfo('simpleParser completed')
