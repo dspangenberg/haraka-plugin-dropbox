@@ -52,7 +52,7 @@
     "email-forward-parser": "^1.7.2",
     "email-reply-parser": "^2.3.5",
     "haraka-dsn": "^1.1.0",
-    "mailparser": "^3.9.8",
+    "mailparser": "^3.9.14",
     "ofetch": "^1.5.1",
     "prettier": "^3.8.1",
     "re2": "1.24.0",
