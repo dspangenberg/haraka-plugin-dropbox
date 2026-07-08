@@ -1,4 +1,4 @@
-# 0.9.5. - 2022-07-08
+# 0.9.5. - 2026-07-08
 
 - Uses the original email-forward-parser and email-reply-parser packages instead of forks. 
 
