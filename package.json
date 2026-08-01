@@ -48,7 +48,7 @@
     "semi": false
   },
   "dependencies": {
-    "chrono-node": "^2.9.0",
+    "chrono-node": "^2.10.1",
     "email-forward-parser": "^1.7.2",
     "email-reply-parser": "^2.3.5",
     "haraka-dsn": "^1.1.0",
