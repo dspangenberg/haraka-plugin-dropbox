@@ -3,7 +3,7 @@ const { ofetch } = require('ofetch')
 const simpleParser = require('mailparser').simpleParser
 const DSN = require('haraka-dsn')
 const EmailReplyParser = require('email-reply-parser').default
-const EmailForwardParser = require('email-forward-parser')
+const EmailForwardParser = require('email-forward-parser').default
 const chrono = require('chrono-node')
 
 exports.register = function () {

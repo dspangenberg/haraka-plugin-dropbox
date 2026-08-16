@@ -9,7 +9,7 @@
 
 ```sh
 cd /path/to/local/haraka
-npm install git@github.com:dspangenberg/haraka-plugin-dropbox.git --legacy-peer-deps
+npm install git@github.com:dspangenberg/haraka-plugin-dropbox.git
 echo "dropbox" >> config/plugins
 service haraka restart
 ```
