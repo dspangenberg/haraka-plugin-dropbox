@@ -1,3 +1,8 @@
+# 0.9.6. - 2026-08-16
+
+- Package updates
+- require('email-forward-parser').default
+
 # 0.9.5. - 2026-07-08
 
 - Uses the original email-forward-parser and email-reply-parser packages instead of forks.
